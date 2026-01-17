@@ -1,6 +1,6 @@
 import pygame
 from circleshape import CircleShape
-from constants import PLAYER_RADIUS, LINE_WIDTH, PLAYER_TURN_SPEED, PLAYER_SPEED, SHOT_RADIUS, PLAYER_SHOT_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS
+from constants import PLAYER_RADIUS, LINE_WIDTH, PLAYER_TURN_SPEED, PLAYER_SPEED, SHOT_RADIUS, PLAYER_SHOT_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS, PLAYER_ACCELERATION, PLAYER_FRICTION
 from shot import Shot
 
 class Player(CircleShape):
@@ -8,6 +8,7 @@ class Player(CircleShape):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0  # in degrees
         self.cooldown_timer = 0
+        self.invulnerable_timer = 0
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -18,16 +19,18 @@ class Player(CircleShape):
         return [a, b, c]
 
     def draw(self, screen):
+        if self.invulnerable_timer > 0:
+            # Flash or just don't draw every frame, or draw different color
+             if int(self.invulnerable_timer * 10) % 2 == 0:
+                 return
         pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)
         
     def rotate(self, dt):
         self.rotation += PLAYER_TURN_SPEED * dt
     
     def move(self, dt):
-        unit_vector = pygame.Vector2(0, 1)
-        rotated_vector = unit_vector.rotate(self.rotation)
-        rotated_with_speed_vector = rotated_vector * PLAYER_SPEED * dt
-        self.position += rotated_with_speed_vector
+        forward = pygame.Vector2(0, 1).rotate(self.rotation)
+        self.velocity += forward * PLAYER_ACCELERATION * dt
 
     def update(self, dt):
         keys = pygame.key.get_pressed()
@@ -49,6 +52,13 @@ class Player(CircleShape):
         
         if self.cooldown_timer > 0:
             self.cooldown_timer -= dt
+        
+        if self.invulnerable_timer > 0:
+            self.invulnerable_timer -= dt
+            
+        self.velocity *= (1 - PLAYER_FRICTION * dt)
+        self.position += self.velocity * dt
+        self.wrap_screen()
 
     def shoot(self):
         shot = Shot(self.position.x, self.position.y, SHOT_RADIUS)
