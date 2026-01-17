@@ -142,11 +142,6 @@ def main():
 
             elif game_state == "playing":
                 if event.type == pygame.KEYDOWN:
-                    # Shooting
-                    if event.key == pygame.K_SPACE:
-                        new_shots = player.shoot()
-                        # Shots are auto-added via containers
-                    
                     # Weapon switching (1-4 keys)
                     if event.key == pygame.K_1:
                         player.switch_weapon(0)
@@ -156,11 +151,6 @@ def main():
                         player.switch_weapon(2)
                     elif event.key == pygame.K_4:
                         player.switch_weapon(3)
-                    
-                    # Bomb dropping
-                    if event.key == pygame.K_b:
-                        bomb = player.drop_bomb()
-                        # Bomb is auto-added via containers
 
             elif game_state == "game_over":
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
@@ -196,6 +186,13 @@ def main():
         elif game_state == "playing":
             # Update all game objects
             updatable.update(dt)
+            
+            # Hold-to-shoot and hold-to-bomb (checked every frame)
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_SPACE]:
+                player.shoot()  # Weapon cooldown handles fire rate
+            if keys[pygame.K_b]:
+                player.drop_bomb()  # Inventory handles cooldown
 
             # Check bomb explosions
             for bomb in list(bombs):
